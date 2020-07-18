@@ -1,55 +1,54 @@
+import { web3 } from "./connect.js";
+
+// ダブルクオテーションから使う
+
+const getById = (id) => {
+    return document.getElementById(id)
+}
+
 const displayedFalse = (id) => {
-    document.getElementById(id).disabled = false;
+    getById(id).disabled = false;
 }
 
 const createNewAccount = () => {
-    let password = document.getElementById("password").value
-    console.log(password)
-    if (password == "") {
+    const password = getById("password").value
+    if (!password) {
         window.alert("Enter a password.")
     } else {
-        let account = web3.eth.accounts.create();
-        console.log(account)
-        let keystore = web3.eth.accounts.encrypt(account.privateKey, password)
-        console.log(keystore)
-        let blob = new Blob([JSON.stringify(keystore)], { "type": "application/json" });
-        let url = URL.createObjectURL(blob);
-        document.getElementById("download").href = url;
-        document.getElementById("saveYourPrivateKey").value = account.privateKey;
+        const account = web3.eth.accounts.create();
+        // keystoreは未実装
+        // const keystore = web3.eth.accounts.encrypt(account.privateKey, password)
+        // const blob = new Blob([JSON.stringify(keystore)], { "type": "application/json" });
+        // getById("download").href = URL.createObjectURL(blob);
+        getById("saveYourPrivateKey").value = account.privateKey;
     }
 }
 
-// document.getElementById("saveYourAddress").addEventListener("click", function () {
-//     let privateKey = document.getElementById("saveYourPrivateKey").value;
-//     let account = web3.eth.accounts.privateKeyToAccount(privateKey);
-
-//     importAccount(account);
-// })
-
 const unlockWithKey = () => {
-    let privateKey = document.getElementById("inputKey").value;
+    const privateKey = document.getElementById("inputKey").value;
     if (!privateKey.match(/^[0-9A-Fa-f]{64}$/)) {
         alert("Enter the private key.");
     } else {
-        let account = web3.eth.accounts.privateKeyToAccount("0x" + privateKey);
-        document.getElementById('account_address').innerText = account.address;//反映
-        document.getElementById('private_key').innerText = privateKey;//反映
+        const account = web3.eth.accounts.privateKeyToAccount("0x" + privateKey);
+        getById("account_address").innerText = account.address;
+        getById("private_key").innerText = privateKey;
         web3.eth.getBalance(account.address).then((balance) => {
-            document.getElementById('eth_balance').innerText = Math.round(web3.utils.fromWei(balance, 'ether') * 100) / 100 + ' ETH';//反映
+            getById("eth_balance").innerText = `${Math.round(web3.utils.fromWei(balance, "ether") * 100) / 100} ETH`;
         })
-        // localStorage.setItem('privateKey', privateKey);
-        // document.getElementById("sendETH").className = "";
     }
 }
 
+
 const generateTx = async () => {
-    let addressFrom = document.getElementById('account_address').innerText;
-    let addressTo = document.getElementById("toAddress").value;
-    let value = document.getElementById("value").value;
-    let gasPrice = document.getElementById("gasPrice").value;
-    let gasLimit = document.getElementById("gasLimit").value;
-    let privateKey = document.getElementById('private_key').innerText;
-    let nonce = await web3.eth.getTransactionCount(addressFrom);
+    const addressFrom = getById("account_address").innerText;
+    const addressTo = getById("toAddress").value;
+    const value = getById("value").value;
+    const gasPrice = getById("gasPrice").value;
+    const gasLimit = getById("gasLimit").value;
+    const privateKey = getById("private_key").innerText;
+    const nonce = await web3.eth.getTransactionCount(addressFrom);
+    console.log(nonce)
+
     // 修正③④　uint → unit
     //      dropdownBtnForTx → dropdown-toggle
     // let unit = document.querySelector(".dropdown-toggle").textContent;
@@ -68,7 +67,16 @@ const generateTx = async () => {
     //     }
     //     //rawTransactionを表示
 
-    //     let transaction = new ethereumjs.Tx(rawTransaction);
+    const rawTransaction = {
+        nonce: web3.utils.toHex(nonce),
+        gasPrice: web3.utils.toHex(gasPrice),
+        gasLimit: web3.utils.toHex(gasLimit),
+        to: addressTo,
+        value: web3.utils.toHex(web3.utils.toWei(value, "ether")),
+        data: "0x",
+    }
+    const transaction = new ethereumjs.Tx(rawTransaction);
+    console.log(transaction)
     //     privateKey = new ethereumjs.Buffer.Buffer(privateKey.substr(2), "hex");
     //     transaction.sign(privateKey);
     //     let serializeTx = transaction.serialize();

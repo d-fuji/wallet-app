@@ -1,0 +1,2 @@
+const projectID = "";
+export { projectID };
