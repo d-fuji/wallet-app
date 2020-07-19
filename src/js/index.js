@@ -1,7 +1,3 @@
-import { web3 } from "./connect.js";
-
-// ダブルクオテーションから使う
-
 const getById = (id) => {
     return document.getElementById(id)
 }
@@ -9,6 +5,12 @@ const getById = (id) => {
 const displayedFalse = (id) => {
     getById(id).disabled = false;
 }
+
+window.addEventListener('load', function () {
+    web3.eth.getGasPrice().then(gasPrice => {
+        getById("gasPrice").value = gasPrice;
+    })
+})
 
 const createNewAccount = () => {
     const password = getById("password").value
@@ -38,103 +40,92 @@ const unlockWithKey = () => {
     }
 }
 
-
 const generateTx = async () => {
     const addressFrom = getById("account_address").innerText;
     const addressTo = getById("toAddress").value;
-    const value = getById("value").value;
+    let value = getById("value").value;
     const gasPrice = getById("gasPrice").value;
     const gasLimit = getById("gasLimit").value;
     const privateKey = getById("private_key").innerText;
-    const nonce = await web3.eth.getTransactionCount(addressFrom);
-    console.log(nonce)
+    const unit = getById("typeOfTx").innerText;
 
-    // 修正③④　uint → unit
-    //      dropdownBtnForTx → dropdown-toggle
-    // let unit = document.querySelector(".dropdown-toggle").textContent;
+    if (unit === "ETH") {
+        const nonce = await web3.eth.getTransactionCount(addressFrom);
+        const rawTx = {
+            nonce: web3.utils.toHex(nonce),
+            gasPrice: web3.utils.toHex(gasPrice),
+            gasLimit: web3.utils.toHex(gasLimit),
+            to: addressTo,
+            value: web3.utils.toHex(web3.utils.toWei(value, "ether")),
+            data: "0x"
+        }
+        const tx = new ethereumjs.Tx(rawTx);
+        const bufferedPrivateKey = new ethereumjs.Buffer.Buffer(privateKey, "hex");
+        tx.sign(bufferedPrivateKey);
+        const serializeTx = tx.serialize();
+        const signedTx = `0x${serializeTx.toString("hex")}`
+        getById("rawTransaction").value = JSON.stringify(rawTx);
+        getById("signedTransaction").value = signedTx;
 
-    // // 修正⑤⑥　uint → unit
-    // // == → ===
-    // if (unit === "Rinkeby ETH") {
-    //     let nonce = await web3.eth.getTransactionCount(addressFrom);
-    //     let rawTransaction = {
-    //         nonce: web3.utils.toHex(nonce),
-    //         gasPrice: web3.utils.toHex(gasPrice),
-    //         gasLimit: web3.utils.toHex(gasLimit),
-    //         to: addressTo,
-    //         value: web3.utils.toHex(web3.utils.toWei(value, "ether")),
-    //         data: "0x",
-    //     }
-    //     //rawTransactionを表示
-
-    const rawTransaction = {
-        nonce: web3.utils.toHex(nonce),
-        gasPrice: web3.utils.toHex(gasPrice),
-        gasLimit: web3.utils.toHex(gasLimit),
-        to: addressTo,
-        value: web3.utils.toHex(web3.utils.toWei(value, "ether")),
-        data: "0x",
+    } else if (unit === "ERC20") {
+        const contractAddress = getById("ERC20ContractAddress").value;
+        let decimals = getById("decimals").value;
+        const address = addressFrom;
+        decimals = Number(decimals);
+        value = value * (10 ** decimals);
+        erc20Contract.options.address = contractAddress;
+        // erc20Contract.methods.balanceOf(address).call()
+        //     .then(value => {
+        //         console.log(value)
+        //     })
+        const estimateGas = await erc20Contract.methods.transfer(addressTo, value.toString()).estimateGas({ from: addressFrom })
+            .then((gasAmount) => {
+                return gasAmount;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+        if (gasLimit < estimateGas) {
+            alert(estimateGas + '以上にgasLimitを設定しましょう');
+        }
+        const data = erc20Contract.methods.transfer(addressTo, value.toString()).encodeABI();
+        const nonce = await web3.eth.getTransactionCount(addressFrom);
+        const rawTx = {
+            nonce: web3.utils.toHex(nonce),
+            gasPrice: web3.utils.toHex(gasPrice),
+            gasLimit: web3.utils.toHex(gasLimit),
+            to: contractAddress,
+            data: data
+        }
+        const tx = new ethereumjs.Tx(rawTx);
+        const bufferedPrivateKey = new ethereumjs.Buffer.Buffer(privateKey, "hex");
+        tx.sign(bufferedPrivateKey);
+        const serializeTx = tx.serialize();
+        const signedTx = `0x${serializeTx.toString("hex")}`
+        getById("rawTransaction").value = JSON.stringify(rawTx);
+        getById("signedTransaction").value = signedTx;
     }
-    const transaction = new ethereumjs.Tx(rawTransaction);
-    console.log(transaction)
-    //     privateKey = new ethereumjs.Buffer.Buffer(privateKey.substr(2), "hex");
-    //     transaction.sign(privateKey);
-    //     let serializeTx = transaction.serialize();
-    //     let signedTransaction = "0x" + serializeTx.toString("hex");
-    //     //signedTransactionを表示
-    //     document.getElementById("rawTransaction").value = JSON.stringify(rawTransaction);
-    //     document.getElementById("signedTransaction").value = signedTransaction;
-    // } else {
-    //     //修正⑦ "ASK" → unit
-    //     const contractAddress = document.getElementById(unit).getAttribute("contractAddress");
-    //     erc20Contract.options.address = contractAddress;
-    //     console.log(contractAddress)
-    //     //修正⑧⑨ "ASK" →　unit
-    //     //decimal → decimals
-    //     const decimals = document.getElementById(unit).getAttribute("decimals");
-    //     console.log(document.getElementById(unit))
-    //     console.log(decimals)
-    //     value = value * (10 ** decimals);
-    //     console.log(value)
+}
 
+const sendTx = () => {
+    const signedTx = getById("signedTransaction").value;
+    console.log(signedTx);
+    web3.eth.sendSignedTransaction(signedTx)
+        .on("transactionHash", (hash) => {
+            console.log(hash);
+        })
+        .on("receipt", (receipt) => {
+            console.log(receipt);
+        })
+        .on("error", (error) => {
+            console.log(error)
+        })
+}
 
-    //     const estimateGas = await erc20Contract.methods.transfer(addressTo, value.toString()).estimateGas({ from: addressFrom })
-    //         .then((gasAmount) => {
-    //             return gasAmount;
-    //         })
-    //         .catch(function (error) {
-    //             console.log(error);
-    //         });
-    //     console.log(estimateGas);
-
-    //     if (gasLimit < estimateGas) {
-    //         alert(estimateGas + '以上にgasLimitを設定しましょう')
-    //     }
-
-    //     let data = erc20Contract.methods.transfer(addressTo, value.toString()).encodeABI();
-    //     let nonce = await web3.eth.getTransactionCount(addressFrom);
-    //     let rawTransaction = {
-    //         nonce: web3.utils.toHex(nonce),
-    //         gasPrice: web3.utils.toHex(gasPrice),
-    //         gasLimit: web3.utils.toHex(gasLimit),
-    //         //修正⑩ "addressTo" → contractAddress
-    //         to: contractAddress,
-    //         data: data
-    //     }
-
-    //     let transaction = new ethereumjs.Tx(rawTransaction);
-    //     privateKey = new ethereumjs.Buffer.Buffer(privateKey.substr(2), "hex");
-    //     transaction.sign(privateKey);
-    //     let serializeTx = transaction.serialize();
-    //     let signedTransaction = "0x" + serializeTx.toString("hex");
-
-    //     //rawTransactionを表示
-    //     //signedTransactionを表示
-    //     document.getElementById("rawTransaction").value = JSON.stringify(rawTransaction);
-    //     document.getElementById("signedTransaction").value = signedTransaction;
-    //}
+const changeDropdown = (token_type) => {
+    getById("typeOfTx").innerText = token_type;
 }
 
 const test = () => {
-    console.log('test')
+    console.log(getById("typeOfTx").innerText);
 }
