@@ -6,12 +6,6 @@ const displayedFalse = (id) => {
     getById(id).disabled = false;
 }
 
-window.addEventListener('load', function () {
-    web3.eth.getGasPrice().then(gasPrice => {
-        getById("gasPrice").value = gasPrice;
-    })
-})
-
 const createNewAccount = () => {
     const password = getById("password").value
     if (!password) {
@@ -44,8 +38,8 @@ const generateTx = async () => {
     const addressFrom = getById("account_address").innerText;
     const addressTo = getById("toAddress").value;
     let value = getById("value").value;
-    const gasPrice = getById("gasPrice").value;
-    const gasLimit = getById("gasLimit").value;
+    const gasPrice = await web3.eth.getGasPrice();
+    let gasLimit = 21000;
     const privateKey = getById("private_key").innerText;
     const unit = getById("typeOfTx").innerText;
 
@@ -70,7 +64,6 @@ const generateTx = async () => {
     } else if (unit === "ERC20") {
         const contractAddress = getById("ERC20ContractAddress").value;
         let decimals = getById("decimals").value;
-        const address = addressFrom;
         decimals = Number(decimals);
         value = value * (10 ** decimals);
         erc20Contract.options.address = contractAddress;
@@ -78,16 +71,7 @@ const generateTx = async () => {
         //     .then(value => {
         //         console.log(value)
         //     })
-        const estimateGas = await erc20Contract.methods.transfer(addressTo, value.toString()).estimateGas({ from: addressFrom })
-            .then((gasAmount) => {
-                return gasAmount;
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
-        if (gasLimit < estimateGas) {
-            alert(estimateGas + '以上にgasLimitを設定しましょう');
-        }
+        gasLimit = await erc20Contract.methods.transfer(addressTo, value.toString()).estimateGas({ from: addressFrom });
         const data = erc20Contract.methods.transfer(addressTo, value.toString()).encodeABI();
         const nonce = await web3.eth.getTransactionCount(addressFrom);
         const rawTx = {

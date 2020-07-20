@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="/src/css/index.css">
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
@@ -19,7 +20,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script src="/src/js/ethereumjs-tx-1.3.3.min.js"></script>
-    <script src="src/js/ierc20Abi.js"></script>
 
     <script src="/src/js/config.js"></script>
     <script src="/src/js/connect.js"></script>
@@ -107,7 +107,8 @@
                                 <span class="input-group-text" id="basic-addon1">0x</span>
                             </div>
                             <input type="text" class="form-control" placeholder="348ce5..." aria-label="Username"
-                                aria-describedby="basic-addon1" id="inputKey">
+                                aria-describedby="basic-addon1" id="inputKey"
+                                value="bd9e2e20455fb44bf056e06d8064c0c9a46794005065f2f110eb803c0dbb4426">
                         </div>
                         <a href="#" class="btn btn-secondary" id="unlockWithKey" onclick='unlockWithKey();'>Unlock</a>
                     </div>
@@ -143,18 +144,16 @@
                     <div class="card-header bg-primary text-white">
                         View Wallet Info
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" id="view_wallet-content">
                         <table class="table">
                             <tbody>
                                 <tr id="yourAddress">
                                     <th scope="row">Your Address</th>
-                                    <td id='account_address'>0x4F43FA9B7f1FF12a493bD1427E3935Cf2B934B36</td>
+                                    <td id='account_address'></td>
                                 </tr>
                                 <tr id="yourPrivateKey">
                                     <th scope="row">Private Key</th>
-                                    <!-- tmp -->
-                                    <td id='private_key'>
-                                        bd9e2e20455fb44bf056e06d8064c0c9a46794005065f2f110eb803c0dbb4426</td>
+                                    <td id='private_key'></td>
                                 </tr>
                                 <tr id="yourBalance">
                                     <th scope="row">Account Balance</th>
@@ -193,17 +192,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <label for="gasPrice">Gas Price</label>
-                                <div class="input-group mb-3">
-                                    <input type="text" class="form-control" placeholder="" aria-label=""
-                                        aria-describedby="basic-addon2" id="gasPrice">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text" id="basic-addon2">wei</span>
-                                    </div>
-                                </div>
-                                <label for="exampleFormControlInput1">Gas Limit</label>
-                                <input type="gasLimit" class="form-control" id="gasLimit" placeholder="21000"
-                                    value=21000>
                             </div>
                             <button type="button" class="btn btn-secondary btn-lg btn-block" id="generateTransaction"
                                 onclick="generateTx();">Generate
@@ -257,7 +245,7 @@
                                 </div>
                                 <button type="submit" class="btn btn-success" id="saveToken20">Save</button>
                             </div>
-                            <div class="add721Token">
+                            <!-- <div class="add721Token">
                                 <h2>Add ERC721 Token</h2>
                                 <div class="form-group">
                                     <label for="token721ContractAddress">Token Contract Address</label>
@@ -269,7 +257,7 @@
                                     <input type="text" class="form-control" placeholder="" id="token721Symbol" value="">
                                 </div>
                                 <button type="submit" class="btn btn-success" id="saveToken721">Save</button>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -299,7 +287,6 @@
                         </div>
                     </div>
                 </div>
-
             </section>
         </div>
     </main>
